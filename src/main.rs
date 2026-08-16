@@ -1,6 +1,9 @@
 mod guidance;
 mod vec3;
 
+use std::fs::File;
+use std::io::Write;
+
 use guidance::{proportional_navigation, EngagementState};
 use vec3::Vec3;
 
@@ -146,18 +149,48 @@ fn main() {
     };
     state.missile.vel = (state.target.pos - state.missile.pos).normalized() * 100.0;
 
+    let mut traj: Vec<(f64, State)> = Vec::new();               //vis
+    traj.push((0.0, state));                                    //vis
+
     let mut t = 0.0;
     while t < cfg.max_time {
         if state.miss_distance() < cfg.impact_dist {
             println!("Intercept at t={}s", t);
             println!("Miss distance: {}m", state.miss_distance());
+            if state.miss_distance <= 0.54 {
+                println!("[+] DIRECT HIT, less than a car seat miss distance")
+            }
+            write_trajectory(&traj);                            //vis
             return;
         }
         state = state.rk4_step(&cfg, t);
         t += cfg.dt;
+        traj.push((t, state));                                  //vis
     }
 
     println!("No intercept within {}s", cfg.max_time);
     println!("Miss distance: {}m", state.miss_distance());
+    write_trajectory(&traj);                                    //vis
     std::process::exit(1);
+}
+
+
+//For testing/visualization only                //vis
+fn write_trajectory(traj: &[(f64, State)]) {
+    let mut f = File::create("trajectory.csv").expect("failed to create trajectory.csv");
+    writeln!(f, "t,mx,my,mz,tx,ty,tz").expect("failed to write header");
+    for (t, s) in traj {
+        writeln!(
+            f,
+            "{},{},{},{},{},{},{}",
+            t,
+            s.missile.pos.x,
+            s.missile.pos.y,
+            s.missile.pos.z,
+            s.target.pos.x,
+            s.target.pos.y,
+            s.target.pos.z
+        )
+        .expect("failed to write trajectory");
+    }
 }
