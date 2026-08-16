@@ -64,8 +64,12 @@ impl State {
             missile_acc = missile_acc.normalized() * cfg.max_accel;
         }
 
-        let target_acc =
-            Vec3::new(0.0, cfg.target_accel * (cfg.weave_freq * t).sin(), 0.0);
+        
+        //let target_acc = Vec3::new(0.0, cfg.target_accel * (cfg.weave_freq * t).sin(), 0.0); //target's evasive manuvers
+
+        let target_acc = Vec3::new(0.0, 0.0, 0.0);
+
+
 
         State {
             missile: Kinematics {
@@ -138,6 +142,7 @@ impl std::ops::Mul<f64> for State {
 fn main() {
     let cfg = SimConfig::default();
     let mut state = State {
+        /*
         missile: Kinematics {
             pos: Vec3::new(0.0, 0.0, 1000.0),
             vel: Vec3::new(0.0, 0.0, 0.0),
@@ -145,6 +150,15 @@ fn main() {
         target: Kinematics {
             pos: Vec3::new(10000.0, 0.0, 500.0),
             vel: Vec3::new(-300.0, 0.0, 0.0),
+        },
+        */
+        missile: Kinematics {
+            pos: Vec3::new(0.0, 0.0, 0.0),
+            vel: Vec3::new(200.0, 0.0, 200.0),
+        },
+        target: Kinematics {
+            pos: Vec3::new(5000.0, 0.0, 400.0),
+            vel: Vec3::new(0.0, 0.0, 200.0),
         },
     };
     state.missile.vel = (state.target.pos - state.missile.pos).normalized() * 100.0;
@@ -157,6 +171,15 @@ fn main() {
         if state.miss_distance() < cfg.impact_dist {
             println!("Intercept at t={}s", t);
             println!("Miss distance: {}m", state.miss_distance());
+            println!(
+                "Hit position: missile ({:.2}, {:.2}, {:.2})m  target ({:.2}, {:.2}, {:.2})m",
+                state.missile.pos.x,
+                state.missile.pos.y,
+                state.missile.pos.z,
+                state.target.pos.x,
+                state.target.pos.y,
+                state.target.pos.z
+            );
             if state.miss_distance() <= 0.54 {
                 println!("[+] DIRECT HIT, less than a car seat miss distance")
             }
