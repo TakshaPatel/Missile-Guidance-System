@@ -18,6 +18,10 @@ pub fn proportional_navigation(state: &EngagementState, nav_gain: f64) -> Vec3 {
 
     let los_rate = los.cross(rel_vel) / (range * range);
     let unit_missile = state.missile_vel / missile_speed;
-    let closing_speed = rel_vel.norm();
+    let unit_los = los / range;
+    //let closing_speed = -rel_vel.dot(unit_los);
+    let closing_speed = (-rel_vel.dot(unit_los)).max(0.0);
+ 
+    //let closing_speed = rel_vel.norm();
     los_rate.cross(unit_missile) * (nav_gain * closing_speed)
 }
