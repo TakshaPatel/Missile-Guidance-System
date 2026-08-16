@@ -47,6 +47,9 @@ Expected result: intercept at ~16.5 s with < 0.1 m miss distance.
 
 You can modify the senario by changing impl Default value's for missile and target stats and te main function state variable for missile and target positions
 
+## Demonstration screenshot
+![A demonstration Screenshot of the 3d graph and stats](demo_screenshot.png)
+
 ## License
 
 [MIT](LICENSE)
