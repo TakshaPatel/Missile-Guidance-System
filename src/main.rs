@@ -188,9 +188,6 @@ fn main() {
             min_state.target.pos.y,
             min_state.target.pos.z
         );
-        if min_range <= 0.54 {
-            println!("[+] DIRECT HIT, less than a car seat miss distance")
-        }
         write_trajectory(&traj);                            //vis
         return;
     }
