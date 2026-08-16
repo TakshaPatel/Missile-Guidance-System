@@ -6,8 +6,8 @@ A 3D missile guidance simulation written in Rust. A homing missile intercepts a 
 
 - `src/vec3.rs` — minimal 3D vector math (`dot`, `cross`, `norm`, operators).
 - `src/guidance.rs` — guidance laws:
-  - `proportional_navigation` — classic PN: `a = N · Vc · (Ω × û_m)`.
-  - `augmented_proportional_navigation` — APN, adds target-acceleration compensation `(N/2) · a_t⊥`, enabling intercept of maneuvering targets.
+  - `proportional_navigation` — classic PN
+  - `augmented_proportional_navigation` — APN, adds target-acceleration compensation, enabling intercept of maneuvering targets.
 - `src/main.rs` — simulation loop (RK4 at `dt = 1e-4` s), boost phase, lateral-acceleration limit (20 g), closest-approach tracking, and CSV output.
 - `visualize.py` — plots missile/target 3D trajectories and range-vs-time.
 
