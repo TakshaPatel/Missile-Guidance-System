@@ -2,6 +2,9 @@
 name = "missile_guidance"
 version = "0.1.0"
 edition = "2021"
+description = "3D missile guidance simulation using augmented proportional navigation with RK4 integration"
+authors = ["Taksha Patel"]
+license = "MIT"
 
 [dependencies]
 
