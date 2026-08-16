@@ -4,7 +4,7 @@ mod vec3;
 use std::fs::File;
 use std::io::Write;
 
-use guidance::{proportional_navigation, EngagementState};
+use guidance::{augmented_proportional_navigation, EngagementState};
 use vec3::Vec3;
 
 struct SimConfig {
@@ -22,11 +22,11 @@ struct SimConfig {
 impl Default for SimConfig {
     fn default() -> Self {
         Self {
-            dt: 1e-3,
+            dt: 1e-4,
             max_time: 60.0,
-            nav_gain: 5.0,
+            nav_gain: 4.5,
             impact_dist: 5.0,
-            target_accel: 60.0,
+            target_accel: 3.0,
             weave_freq: 0.5,
             boost_accel: 100.0,
             boost_time: 4.0,
@@ -49,27 +49,24 @@ struct State {
 
 impl State {
     fn deriv(&self, cfg: &SimConfig, t: f64) -> State {
+        let target_acc =
+            Vec3::new(0.0, cfg.target_accel * (cfg.weave_freq * t).sin(), 0.0);
+
         let engagement = EngagementState {
             missile_pos: self.missile.pos,
             missile_vel: self.missile.vel,
             target_pos: self.target.pos,
             target_vel: self.target.vel,
+            target_acc,
         };
 
-        let mut missile_acc = proportional_navigation(&engagement, cfg.nav_gain);
+        let mut missile_acc = augmented_proportional_navigation(&engagement, cfg.nav_gain);
         if t < cfg.boost_time {
             missile_acc += self.missile.vel.normalized() * cfg.boost_accel;
         }
         if missile_acc.norm() > cfg.max_accel {
             missile_acc = missile_acc.normalized() * cfg.max_accel;
         }
-
-        
-        //let target_acc = Vec3::new(0.0, cfg.target_accel * (cfg.weave_freq * t).sin(), 0.0); //target's evasive manuvers
-
-        let target_acc = Vec3::new(0.0, 0.0, 0.0);
-
-
 
         State {
             missile: Kinematics {
@@ -142,23 +139,13 @@ impl std::ops::Mul<f64> for State {
 fn main() {
     let cfg = SimConfig::default();
     let mut state = State {
-        /*
         missile: Kinematics {
-            pos: Vec3::new(0.0, 0.0, 1000.0),
-            vel: Vec3::new(0.0, 0.0, 0.0),
+            pos: Vec3::new(0.0, 0.0, 5000.0),
+            vel: Vec3::new(268.24, 0.0, -9.08),
         },
         target: Kinematics {
-            pos: Vec3::new(10000.0, 0.0, 500.0),
-            vel: Vec3::new(-300.0, 0.0, 0.0),
-        },
-        */
-        missile: Kinematics {
-            pos: Vec3::new(0.0, 0.0, 0.0),
-            vel: Vec3::new(200.0, 0.0, 200.0),
-        },
-        target: Kinematics {
-            pos: Vec3::new(5000.0, 0.0, 400.0),
-            vel: Vec3::new(0.0, 0.0, 200.0),
+            pos: Vec3::new(5000.0, 0.0, 0.0),
+            vel: Vec3::new(32.4, 8.9, 0.0),
         },
     };
     state.missile.vel = (state.target.pos - state.missile.pos).normalized() * 100.0;
@@ -167,32 +154,49 @@ fn main() {
     traj.push((0.0, state));                                    //vis
 
     let mut t = 0.0;
+    let mut min_range = f64::MAX;
+    let mut min_t = 0.0;
+    let mut min_state = state;
+    let mut seen_close = false;
     while t < cfg.max_time {
-        if state.miss_distance() < cfg.impact_dist {
-            println!("Intercept at t={}s", t);
-            println!("Miss distance: {}m", state.miss_distance());
-            println!(
-                "Hit position: missile ({:.2}, {:.2}, {:.2})m  target ({:.2}, {:.2}, {:.2})m",
-                state.missile.pos.x,
-                state.missile.pos.y,
-                state.missile.pos.z,
-                state.target.pos.x,
-                state.target.pos.y,
-                state.target.pos.z
-            );
-            if state.miss_distance() <= 0.54 {
-                println!("[+] DIRECT HIT, less than a car seat miss distance")
-            }
-            write_trajectory(&traj);                            //vis
-            return;
+        let r = state.miss_distance();
+        if r < min_range {
+            min_range = r;
+            min_t = t;
+            min_state = state;
+        }
+        if seen_close && r > min_range + 0.5 {
+            break;
+        }
+        if r < cfg.impact_dist {
+            seen_close = true;
         }
         state = state.rk4_step(&cfg, t);
         t += cfg.dt;
         traj.push((t, state));                                  //vis
     }
 
+    if seen_close {
+        println!("Intercept at t={}s", min_t);
+        println!("Closest approach: {}m", min_range);
+        println!(
+            "Hit position: missile ({:.2}, {:.2}, {:.2})m  target ({:.2}, {:.2}, {:.2})m",
+            min_state.missile.pos.x,
+            min_state.missile.pos.y,
+            min_state.missile.pos.z,
+            min_state.target.pos.x,
+            min_state.target.pos.y,
+            min_state.target.pos.z
+        );
+        if min_range <= 0.54 {
+            println!("[+] DIRECT HIT, less than a car seat miss distance")
+        }
+        write_trajectory(&traj);                            //vis
+        return;
+    }
+
     println!("No intercept within {}s", cfg.max_time);
-    println!("Miss distance: {}m", state.miss_distance());
+    println!("Closest approach: {}m", min_range);
     write_trajectory(&traj);                                    //vis
     std::process::exit(1);
 }
