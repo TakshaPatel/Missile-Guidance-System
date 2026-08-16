@@ -12,6 +12,13 @@ impl Vec3 {
         Self { x, y, z }
     }
 
+    /*
+        Calc dot product:
+        Take in two vector3s (A 3d position/angle) and make it a single number(scalar)
+        If number pos then:   Same general direction(angle < 90 deg)
+        If number 0 then:     angles are purpendicular
+        If number neg then:   inverse directions (angle > 90 deg)
+    */
     pub fn dot(self, other: Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
