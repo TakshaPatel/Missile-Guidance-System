@@ -157,7 +157,7 @@ fn main() {
         if state.miss_distance() < cfg.impact_dist {
             println!("Intercept at t={}s", t);
             println!("Miss distance: {}m", state.miss_distance());
-            if state.miss_distance <= 0.54 {
+            if state.miss_distance() <= 0.54 {
                 println!("[+] DIRECT HIT, less than a car seat miss distance")
             }
             write_trajectory(&traj);                            //vis
